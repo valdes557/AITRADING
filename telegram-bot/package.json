@@ -1,0 +1,19 @@
+{
+  "name": "ai-trading-signals-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot for AI Trading Signals alerts",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "mongoose": "^8.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.3"
+  }
+}
