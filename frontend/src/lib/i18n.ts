@@ -119,6 +119,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'auth.loginSuccess': 'Bienvenue !',
     'auth.loginFailed': 'Echec de connexion',
     'auth.registerFailed': 'Echec de l\'inscription',
+    'auth.trialDenied': 'Votre essai gratuit n\'est pas disponible. Veuillez souscrire a un plan pour continuer.',
 
     // Dashboard nav
     'dash.dashboard': 'Tableau de Bord',
@@ -250,6 +251,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'auth.loginSuccess': 'Welcome back!',
     'auth.loginFailed': 'Login failed',
     'auth.registerFailed': 'Registration failed',
+    'auth.trialDenied': 'Your free trial is not available. Please subscribe to a plan to continue.',
 
     // Dashboard nav
     'dash.dashboard': 'Dashboard',

@@ -2,9 +2,19 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const crypto = require('crypto');
 const User = require('../models/User');
+const TrialRecord = require('../models/TrialRecord');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Helper: get real client IP behind proxies
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+}
 
 // POST /api/auth/register
 router.post(
@@ -13,6 +23,7 @@ router.post(
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('deviceFingerprint').trim().notEmpty().withMessage('Device fingerprint is required'),
   ],
   async (req, res) => {
     try {
@@ -21,26 +32,55 @@ router.post(
         return res.status(400).json({ message: errors.array()[0].msg });
       }
 
-      const { name, email, password } = req.body;
+      const { name, email, password, deviceFingerprint } = req.body;
+      const clientIP = getClientIP(req);
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({ message: 'Email already registered' });
       }
 
-      // New users get a 3-day Basic trial
-      const trialExpiry = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      // --- Trial abuse prevention ---
+      // Check if this IP or device fingerprint was already used for a trial
+      const existingTrialByIP = await TrialRecord.findOne({ ipAddress: clientIP });
+      const existingTrialByDevice = await TrialRecord.findOne({ deviceFingerprint });
+
+      const trialAbused = existingTrialByIP || existingTrialByDevice;
+
+      let plan = 'basic';
+      let planExpiresAt = null;
+
+      if (trialAbused) {
+        // This IP or device already used a trial — no trial, account created without plan
+        plan = 'expired';
+        planExpiresAt = new Date(); // already expired
+      } else {
+        // New IP + new device = grant 3-day Basic trial
+        plan = 'basic';
+        planExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      }
+
       const user = await User.create({
         name,
         email,
         password,
-        plan: 'basic',
-        planExpiresAt: trialExpiry,
+        plan,
+        planExpiresAt,
       });
+
+      // Record the trial (even if denied, record IP+fingerprint for tracking)
+      await TrialRecord.create({
+        email,
+        ipAddress: clientIP,
+        deviceFingerprint,
+        userId: user._id,
+      });
+
       const token = user.generateToken();
 
       res.status(201).json({
         token,
+        trialGranted: !trialAbused,
         user: {
           _id: user._id,
           name: user.name,

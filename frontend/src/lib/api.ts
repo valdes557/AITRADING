@@ -33,7 +33,7 @@ api.interceptors.response.use(
 
 // Auth
 export const authAPI = {
-  register: (data: { name: string; email: string; password: string }) =>
+  register: (data: { name: string; email: string; password: string; deviceFingerprint: string }) =>
     api.post('/auth/register', data),
   login: (data: { email: string; password: string }) =>
     api.post('/auth/login', data),

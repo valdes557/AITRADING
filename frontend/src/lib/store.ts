@@ -8,7 +8,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, deviceFingerprint: string) => Promise<void>;
   logout: () => void;
   fetchProfile: () => Promise<void>;
   updateUser: (data: Partial<User>) => void;
@@ -25,8 +25,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: data.user, isAuthenticated: true, isLoading: false });
   },
 
-  register: async (name: string, email: string, password: string) => {
-    const { data } = await authAPI.register({ name, email, password });
+  register: async (name: string, email: string, password: string, deviceFingerprint: string) => {
+    const { data } = await authAPI.register({ name, email, password, deviceFingerprint });
     Cookies.set('token', data.token, { expires: 30 });
     set({ user: data.user, isAuthenticated: true, isLoading: false });
   },

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { TrendingUp, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
+import { generateDeviceFingerprint } from '@/lib/fingerprint';
 import LanguageToggle from '@/components/LanguageToggle';
 import toast from 'react-hot-toast';
 
@@ -32,7 +33,8 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await register(name, email, password);
+      const deviceFingerprint = await generateDeviceFingerprint();
+      await register(name, email, password, deviceFingerprint);
       toast.success(t('auth.accountCreated'));
       router.push('/dashboard');
     } catch (err: any) {

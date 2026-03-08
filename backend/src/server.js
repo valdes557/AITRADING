@@ -19,6 +19,9 @@ const { startCronJobs } = require('./services/signalCron');
 
 const app = express();
 
+// Trust proxy (needed for correct IP detection behind Render/Vercel)
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
