@@ -19,16 +19,9 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
+import LanguageToggle from '@/components/LanguageToggle';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', adminOnly: false },
-  { href: '/dashboard/signals', icon: Zap, label: 'Signals', adminOnly: false },
-  { href: '/dashboard/journal', icon: BookOpen, label: 'Journal', adminOnly: false },
-  { href: '/dashboard/analytics', icon: BarChart3, label: 'Analytics', adminOnly: false },
-  { href: '/dashboard/settings', icon: Settings, label: 'Settings', adminOnly: false },
-  { href: '/dashboard/admin', icon: Shield, label: 'Admin', adminOnly: true },
-];
 
 export default function DashboardLayout({
   children,
@@ -38,7 +31,17 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, fetchProfile, logout, isLoading } = useAuthStore();
+  const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const navItems = [
+    { href: '/dashboard', icon: LayoutDashboard, label: t('dash.dashboard'), adminOnly: false },
+    { href: '/dashboard/signals', icon: Zap, label: t('dash.signals'), adminOnly: false },
+    { href: '/dashboard/journal', icon: BookOpen, label: t('dash.journal'), adminOnly: false },
+    { href: '/dashboard/analytics', icon: BarChart3, label: t('dash.analytics'), adminOnly: false },
+    { href: '/dashboard/settings', icon: Settings, label: t('dash.settings'), adminOnly: false },
+    { href: '/dashboard/admin', icon: Shield, label: t('dash.admin'), adminOnly: true },
+  ];
 
   useEffect(() => {
     fetchProfile();
@@ -68,7 +71,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -77,10 +80,10 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - fixed, does not scroll with content */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-dark-900 border-r border-dark-700 flex flex-col transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-dark-900 border-r border-dark-700 flex flex-col transition-transform duration-300 lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -91,7 +94,7 @@ export default function DashboardLayout({
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.filter((item) => !item.adminOnly || user?.role === 'admin').map((item) => {
             const isActive =
               pathname === item.href ||
@@ -124,24 +127,27 @@ export default function DashboardLayout({
               <p className="text-sm font-medium truncate">{user.name}</p>
               <p className={cn('text-xs font-semibold uppercase flex items-center gap-1', planColors[user.plan])}>
                 {user.plan === 'vip' && <Crown className="w-3 h-3" />}
-                {user.plan} Plan
+                {user.plan} {t('dash.plan')}
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2 px-4 mb-2">
+            <LanguageToggle className="flex-1 justify-center" />
           </div>
           <button
             onClick={logout}
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-dark-400 hover:text-sell hover:bg-dark-800 w-full transition-all"
           >
             <LogOut className="w-5 h-5" />
-            Sign Out
+            {t('dash.signOut')}
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      {/* Main content - offset by sidebar width on desktop */}
+      <div className="flex-1 flex flex-col h-screen lg:ml-64">
         {/* Top bar */}
-        <header className="h-16 border-b border-dark-700 flex items-center justify-between px-6 glass sticky top-0 z-30">
+        <header className="h-16 border-b border-dark-700 flex items-center justify-between px-6 glass sticky top-0 z-30 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-dark-400 hover:text-white"
@@ -168,8 +174,8 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        {/* Page content - scrolls independently */}
+        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

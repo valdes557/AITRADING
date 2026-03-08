@@ -112,6 +112,18 @@ export const adminAPI = {
   createTestimonial: (data: any) => api.post('/admin/testimonials', data),
   updateTestimonial: (id: string, data: any) => api.put(`/admin/testimonials/${id}`, data),
   deleteTestimonial: (id: string) => api.delete(`/admin/testimonials/${id}`),
+  // Client plan management
+  updateUserPlan: (userId: string, data: { plan: string; duration?: number }) =>
+    api.put(`/admin/users/${userId}/plan`, data),
+  // Site config
+  getSiteConfig: () => api.get('/admin/site-config'),
+  updateSiteConfig: (data: { platformName?: string; logoUrl?: string }) =>
+    api.put('/admin/site-config', data),
+};
+
+// Notifications
+export const notificationsAPI = {
+  getRecent: () => api.get('/notifications/recent'),
 };
 
 export default api;

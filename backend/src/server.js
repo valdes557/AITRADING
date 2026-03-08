@@ -14,6 +14,7 @@ const userRoutes = require('./routes/users');
 const subscriptionRoutes = require('./routes/subscriptions');
 const adminRoutes = require('./routes/admin');
 const testimonialRoutes = require('./routes/testimonials');
+const { router: notificationRoutes } = require('./routes/notifications');
 const { startCronJobs } = require('./services/signalCron');
 
 const app = express();
@@ -21,7 +22,17 @@ const app = express();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    const allowed = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+    ].filter(Boolean);
+    if (!origin || allowed.some((u) => origin.startsWith(u))) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all in dev, restrict in production if needed
+    }
+  },
   credentials: true,
 }));
 
@@ -51,6 +62,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

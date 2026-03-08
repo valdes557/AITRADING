@@ -28,7 +28,15 @@ router.post(
         return res.status(400).json({ message: 'Email already registered' });
       }
 
-      const user = await User.create({ name, email, password });
+      // New users get a 3-day Basic trial
+      const trialExpiry = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const user = await User.create({
+        name,
+        email,
+        password,
+        plan: 'basic',
+        planExpiresAt: trialExpiry,
+      });
       const token = user.generateToken();
 
       res.status(201).json({
@@ -38,6 +46,7 @@ router.post(
           name: user.name,
           email: user.email,
           plan: user.plan,
+          planExpiresAt: user.planExpiresAt,
           preferences: user.preferences,
           role: user.role,
           createdAt: user.createdAt,

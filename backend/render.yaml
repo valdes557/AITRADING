@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: ai-trading-signals-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE
+        value: 30d
+      - key: SIGNAL_ENGINE_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

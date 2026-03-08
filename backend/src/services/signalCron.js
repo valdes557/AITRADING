@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const axios = require('axios');
 const Signal = require('../models/Signal');
 const User = require('../models/User');
+const { dispatchSignalNotifications } = require('./notificationDispatcher');
 
 const SIGNAL_ENGINE_URL = process.env.SIGNAL_ENGINE_URL || 'http://localhost:8000';
 
@@ -54,7 +55,7 @@ async function generateSignals() {
             });
 
             if (!existing) {
-              await Signal.create({
+              const newSignal = await Signal.create({
                 asset: s.asset,
                 market: s.market,
                 direction: s.direction,
@@ -70,6 +71,11 @@ async function generateSignals() {
                 indicators: s.indicators,
               });
               totalSignals++;
+
+              // Dispatch notifications (email, telegram, whatsapp)
+              dispatchSignalNotifications(newSignal).catch((err) =>
+                console.error('[CRON] Notification dispatch error:', err.message)
+              );
             }
           }
         }

@@ -11,8 +11,13 @@ import {
   Loader2,
   MessageSquare,
   Users,
-  Edit3,
+  Settings,
   X,
+  Search,
+  Crown,
+  Ban,
+  CheckCircle,
+  Image,
 } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
@@ -41,14 +46,37 @@ interface Testimonial {
   order: number;
 }
 
+interface ClientUser {
+  _id: string;
+  name: string;
+  email: string;
+  plan: string;
+  planExpiresAt?: string;
+  role: string;
+  isBanned: boolean;
+  createdAt: string;
+}
+
+type TabKey = 'clients' | 'plans' | 'testimonials' | 'settings';
+
 export default function AdminPage() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'plans' | 'testimonials' | 'stats'>('plans');
+  const [activeTab, setActiveTab] = useState<TabKey>('clients');
   const [plans, setPlans] = useState<PlanConfig[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingPlan, setSavingPlan] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
+
+  // Clients
+  const [clients, setClients] = useState<ClientUser[]>([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+
+  // Site config
+  const [platformName, setPlatformName] = useState('AI Trading Signals');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [savingConfig, setSavingConfig] = useState(false);
 
   // New testimonial form
   const [showForm, setShowForm] = useState(false);
@@ -67,19 +95,68 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [plansRes, testimonialsRes, statsRes] = await Promise.allSettled([
+      const [plansRes, testimonialsRes, statsRes, usersRes, configRes] = await Promise.allSettled([
         adminAPI.getPlans(),
         adminAPI.getTestimonials(),
         adminAPI.getStats(),
+        adminAPI.getUsers({ page: 1 }),
+        adminAPI.getSiteConfig(),
       ]);
 
       if (plansRes.status === 'fulfilled') setPlans(plansRes.value.data.plans || []);
       if (testimonialsRes.status === 'fulfilled') setTestimonials(testimonialsRes.value.data.testimonials || []);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (usersRes.status === 'fulfilled') setClients(usersRes.value.data.users || []);
+      if (configRes.status === 'fulfilled') {
+        setPlatformName(configRes.value.data.platformName || 'AI Trading Signals');
+        setLogoUrl(configRes.value.data.logoUrl || '');
+      }
     } catch {
       toast.error('Failed to load admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const searchClients = async () => {
+    try {
+      const { data } = await adminAPI.getUsers({ search: clientSearch });
+      setClients(data.users || []);
+    } catch {
+      toast.error('Search failed');
+    }
+  };
+
+  const handleUpdateUserPlan = async (userId: string, plan: string) => {
+    setUpdatingUser(userId);
+    try {
+      const { data } = await adminAPI.updateUserPlan(userId, { plan, duration: 30 });
+      setClients((prev) =>
+        prev.map((c) =>
+          c._id === userId ? { ...c, plan: data.user.plan, planExpiresAt: data.user.planExpiresAt } : c
+        )
+      );
+      toast.success(data.message);
+    } catch {
+      toast.error('Failed to update user plan');
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
+  const handleBanToggle = async (userId: string, isBanned: boolean) => {
+    try {
+      if (isBanned) {
+        await adminAPI.unbanUser(userId);
+      } else {
+        await adminAPI.banUser(userId);
+      }
+      setClients((prev) =>
+        prev.map((c) => (c._id === userId ? { ...c, isBanned: !isBanned } : c))
+      );
+      toast.success(isBanned ? 'User unbanned' : 'User banned');
+    } catch {
+      toast.error('Action failed');
     }
   };
 
@@ -110,6 +187,18 @@ export default function AdminPage() {
       toast.error('Failed to update features');
     } finally {
       setSavingPlan(null);
+    }
+  };
+
+  const handleSaveSiteConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await adminAPI.updateSiteConfig({ platformName, logoUrl });
+      toast.success('Platform settings saved!');
+    } catch {
+      toast.error('Failed to save settings');
+    } finally {
+      setSavingConfig(false);
     }
   };
 
@@ -153,13 +242,20 @@ export default function AdminPage() {
     }
   };
 
+  const planColors: Record<string, string> = {
+    free: 'text-dark-400 bg-dark-700',
+    basic: 'text-blue-400 bg-blue-500/15',
+    pro: 'text-primary-400 bg-primary-500/15',
+    vip: 'text-warning bg-warning/15',
+  };
+
   if (user?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Shield className="w-16 h-16 text-dark-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-dark-400">Admin Access Required</h2>
-          <p className="text-dark-500 mt-2">You don't have permission to view this page.</p>
+          <p className="text-dark-500 mt-2">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -177,7 +273,7 @@ export default function AdminPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold mb-1">Admin Panel</h1>
-        <p className="text-dark-400">Manage plans, testimonials, and platform settings</p>
+        <p className="text-dark-400">Manage clients, plans, testimonials, and platform settings</p>
       </div>
 
       {/* Quick Stats */}
@@ -203,16 +299,18 @@ export default function AdminPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-dark-700 pb-2">
+      <div className="flex gap-2 border-b border-dark-700 pb-2 overflow-x-auto">
         {[
-          { key: 'plans' as const, label: 'Plan Pricing', icon: DollarSign },
-          { key: 'testimonials' as const, label: 'Testimonials', icon: MessageSquare },
+          { key: 'clients' as TabKey, label: 'Clients', icon: Users },
+          { key: 'plans' as TabKey, label: 'Plan Pricing', icon: DollarSign },
+          { key: 'testimonials' as TabKey, label: 'Testimonials', icon: MessageSquare },
+          { key: 'settings' as TabKey, label: 'Settings', icon: Settings },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               activeTab === tab.key
                 ? 'bg-primary-600/15 text-primary-400 border border-primary-500/30'
                 : 'text-dark-400 hover:text-dark-200 hover:bg-dark-800'
@@ -224,7 +322,96 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Plan Pricing Tab */}
+      {/* ========== CLIENTS TAB ========== */}
+      {activeTab === 'clients' && (
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+              <input
+                type="text"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchClients()}
+                placeholder="Search by name or email..."
+                className="input-field pl-10 w-full"
+              />
+            </div>
+            <button onClick={searchClients} className="btn-primary px-4">
+              Search
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {clients.length === 0 ? (
+              <div className="card text-center py-8">
+                <Users className="w-10 h-10 text-dark-600 mx-auto mb-3" />
+                <p className="text-dark-400">No clients found</p>
+              </div>
+            ) : (
+              clients.map((client) => (
+                <div
+                  key={client._id}
+                  className={cn('card', client.isBanned && 'opacity-50 border-sell/30')}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold truncate">{client.name}</p>
+                        <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium uppercase', planColors[client.plan] || planColors.free)}>
+                          {client.plan}
+                        </span>
+                        {client.isBanned && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-sell/20 text-sell">Banned</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-dark-400 truncate">{client.email}</p>
+                      <div className="flex gap-4 mt-1 text-xs text-dark-500">
+                        <span>Joined: {new Date(client.createdAt).toLocaleDateString()}</span>
+                        {client.planExpiresAt && (
+                          <span>Expires: {new Date(client.planExpiresAt).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <select
+                        value={client.plan}
+                        onChange={(e) => handleUpdateUserPlan(client._id, e.target.value)}
+                        disabled={updatingUser === client._id}
+                        className="input-field text-sm py-1.5 px-3 w-28"
+                      >
+                        <option value="free">Free</option>
+                        <option value="basic">Basic</option>
+                        <option value="pro">Pro</option>
+                        <option value="vip">VIP</option>
+                      </select>
+
+                      {updatingUser === client._id && (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary-400" />
+                      )}
+
+                      <button
+                        onClick={() => handleBanToggle(client._id, client.isBanned)}
+                        className={cn(
+                          'text-xs px-3 py-1.5 rounded-lg font-medium transition-colors',
+                          client.isBanned
+                            ? 'bg-buy/15 text-buy hover:bg-buy/25'
+                            : 'bg-sell/15 text-sell hover:bg-sell/25'
+                        )}
+                      >
+                        {client.isBanned ? 'Unban' : 'Ban'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========== PLAN PRICING TAB ========== */}
       {activeTab === 'plans' && (
         <div className="space-y-4">
           <p className="text-sm text-dark-400">
@@ -342,7 +529,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Testimonials Tab */}
+      {/* ========== TESTIMONIALS TAB ========== */}
       {activeTab === 'testimonials' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -475,6 +662,79 @@ export default function AdminPage() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========== SETTINGS TAB ========== */}
+      {activeTab === 'settings' && (
+        <div className="space-y-6">
+          <p className="text-sm text-dark-400">
+            Modify your platform name and logo. These will be displayed across the site.
+          </p>
+
+          <div className="card max-w-xl">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Settings className="w-5 h-5 text-primary-400" />
+              Platform Identity
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Platform Name</label>
+                <input
+                  type="text"
+                  value={platformName}
+                  onChange={(e) => setPlatformName(e.target.value)}
+                  placeholder="AI Trading Signals"
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Logo URL</label>
+                <input
+                  type="text"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="input-field"
+                />
+                <p className="text-xs text-dark-500 mt-1">
+                  Enter a URL to your logo image (PNG, SVG recommended). Leave empty to use the default icon.
+                </p>
+              </div>
+
+              {logoUrl && (
+                <div className="p-4 bg-dark-800 rounded-lg">
+                  <p className="text-xs text-dark-400 mb-2">Preview:</p>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={logoUrl}
+                      alt="Logo preview"
+                      className="w-10 h-10 object-contain rounded"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <span className="text-lg font-bold gradient-text">{platformName}</span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={handleSaveSiteConfig}
+                disabled={savingConfig}
+                className="btn-primary flex items-center gap-2 px-6"
+              >
+                {savingConfig ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Save Settings
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ const Signal = require('../models/Signal');
 const Subscription = require('../models/Subscription');
 const PlanConfig = require('../models/PlanConfig');
 const Testimonial = require('../models/Testimonial');
+const SiteConfig = require('../models/SiteConfig');
 const { protect, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
@@ -286,6 +287,92 @@ router.delete('/testimonials/:id', async (req, res) => {
     }
     res.json({ message: 'Testimonial deleted successfully' });
   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== CLIENT PLAN MANAGEMENT ==========
+
+// PUT /api/admin/users/:id/plan - Activate/change a client's plan
+router.put('/users/:id/plan', async (req, res) => {
+  try {
+    const { plan, duration } = req.body;
+    const validPlans = ['free', 'basic', 'pro', 'vip'];
+
+    if (!validPlans.includes(plan)) {
+      return res.status(400).json({ message: 'Invalid plan. Must be: free, basic, pro, or vip' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.plan = plan;
+
+    if (plan === 'free') {
+      user.planExpiresAt = undefined;
+    } else {
+      const days = duration || 30;
+      user.planExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    }
+
+    await user.save();
+
+    // Also create/update a subscription record
+    if (plan !== 'free') {
+      await Subscription.findOneAndUpdate(
+        { userId: user._id, status: 'active' },
+        {
+          userId: user._id,
+          plan,
+          status: 'active',
+          startDate: new Date(),
+          endDate: user.planExpiresAt,
+          paymentMethod: 'admin_activated',
+          amount: 0,
+          currency: 'USD',
+        },
+        { upsert: true, new: true }
+      );
+    } else {
+      // Deactivate any active subscription
+      await Subscription.updateMany(
+        { userId: user._id, status: 'active' },
+        { status: 'cancelled' }
+      );
+    }
+
+    res.json({
+      message: `User plan updated to ${plan}`,
+      user: { _id: user._id, name: user.name, email: user.email, plan: user.plan, planExpiresAt: user.planExpiresAt },
+    });
+  } catch (error) {
+    console.error('Update user plan error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== SITE CONFIG ==========
+
+// GET /api/admin/site-config
+router.get('/site-config', async (req, res) => {
+  try {
+    const platformName = await SiteConfig.get('platformName', 'AI Trading Signals');
+    const logoUrl = await SiteConfig.get('logoUrl', '');
+    res.json({ platformName, logoUrl });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PUT /api/admin/site-config
+router.put('/site-config', async (req, res) => {
+  try {
+    const { platformName, logoUrl } = req.body;
+    if (platformName !== undefined) await SiteConfig.set('platformName', platformName);
+    if (logoUrl !== undefined) await SiteConfig.set('logoUrl', logoUrl);
+    res.json({ message: 'Site configuration updated', platformName, logoUrl });
+  } catch (error) {
+    console.error('Update site config error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

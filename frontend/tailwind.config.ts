@@ -59,6 +59,16 @@ const config: Config = {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'slide-up': 'slideUp 0.3s ease-out',
         'fade-in': 'fadeIn 0.5s ease-out',
+        'fade-in-up': 'fadeInUp 0.7s ease-out forwards',
+        'fade-in-left': 'fadeInLeft 0.7s ease-out forwards',
+        'fade-in-right': 'fadeInRight 0.7s ease-out forwards',
+        'float': 'float 6s ease-in-out infinite',
+        'float-delay': 'float 6s ease-in-out 2s infinite',
+        'glow': 'glow 3s ease-in-out infinite',
+        'ticker': 'ticker 20s linear infinite',
+        'count-up': 'fadeInUp 0.5s ease-out forwards',
+        'candle-grow': 'candleGrow 2s ease-out forwards',
+        'line-draw': 'lineDraw 2s ease-out forwards',
       },
       keyframes: {
         slideUp: {
@@ -68,6 +78,38 @@ const config: Config = {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { transform: 'translateY(30px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        fadeInLeft: {
+          '0%': { transform: 'translateX(-30px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        fadeInRight: {
+          '0%': { transform: 'translateX(30px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        glow: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.8' },
+        },
+        ticker: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        candleGrow: {
+          '0%': { transform: 'scaleY(0)', opacity: '0' },
+          '100%': { transform: 'scaleY(1)', opacity: '1' },
+        },
+        lineDraw: {
+          '0%': { strokeDashoffset: '1000' },
+          '100%': { strokeDashoffset: '0' },
         },
       },
     },
