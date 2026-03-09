@@ -187,7 +187,7 @@ export default function DashboardPage() {
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
             </div>
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -285,8 +285,8 @@ export default function DashboardPage() {
               key={signal._id}
               className={`signal-card ${signal.direction.toLowerCase()} p-4`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-bold text-lg">{signal.asset}</span>
                   <span
                     className={
@@ -301,11 +301,11 @@ export default function DashboardPage() {
                     {signal.direction}
                   </span>
                   <span className="badge-neutral">{signal.timeframe}</span>
-                  <span className="badge-neutral">{signal.strategy}</span>
+                  <span className="badge-neutral hidden sm:inline-flex">{signal.strategy}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-sm font-semibold ${getConfidenceColor(signal.confidenceScore)}`}>
-                    {signal.confidenceScore}% confidence
+                    {signal.confidenceScore}%
                   </span>
                   {signal.status === 'active' && (
                     <span className="flex items-center gap-1 text-xs text-primary-400">

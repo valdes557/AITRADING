@@ -147,11 +147,9 @@ export default function JournalPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Trading Journal</h1>
-          <p className="text-dark-400">Track your trades and improve your discipline</p>
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold mb-1">Trading Journal</h1>
+        <p className="text-dark-400 text-sm sm:text-base">Track your trades and improve your discipline</p>
       </div>
 
       {/* Stats */}
@@ -161,7 +159,7 @@ export default function JournalPage() {
             <span className="text-xs text-dark-400 font-medium uppercase tracking-wide">
               {stat.label}
             </span>
-            <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+            <p className={`text-lg sm:text-xl font-bold ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -183,11 +181,11 @@ export default function JournalPage() {
 
             return (
               <div key={entry._id} className="card-hover">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        'w-10 h-10 rounded-xl flex items-center justify-center',
+                        'w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center',
                         isPnlPositive ? 'bg-buy/10' : 'bg-sell/10'
                       )}
                     >
@@ -197,8 +195,8 @@ export default function JournalPage() {
                         <TrendingDown className="w-5 h-5 text-sell" />
                       )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-bold">{signal.asset}</h3>
                         <span
                           className={
@@ -208,9 +206,9 @@ export default function JournalPage() {
                           {signal.direction}
                         </span>
                         <span className="badge-neutral">{signal.timeframe}</span>
-                        <span className="badge-neutral">{signal.strategy}</span>
+                        <span className="badge-neutral hidden sm:inline-flex">{signal.strategy}</span>
                       </div>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-dark-500">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-dark-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {formatDate(entry.createdAt)}
@@ -222,10 +220,10 @@ export default function JournalPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right flex sm:block items-center gap-3">
                     <p
                       className={cn(
-                        'text-xl font-bold',
+                        'text-lg sm:text-xl font-bold',
                         isPnlPositive ? 'text-buy' : 'text-sell'
                       )}
                     >
@@ -245,7 +243,7 @@ export default function JournalPage() {
                 </div>
 
                 {/* Trade Details */}
-                <div className="grid grid-cols-4 gap-3 mb-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                   <div className="bg-dark-800/50 rounded-lg p-2 text-center">
                     <span className="text-xs text-dark-400">Entry</span>
                     <p className="font-mono text-sm font-semibold">{entry.entryPrice}</p>

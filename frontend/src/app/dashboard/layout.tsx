@@ -175,7 +175,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Page content - scrolls independently */}
-        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+        <main className="flex-1 p-3 sm:p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

@@ -145,11 +145,9 @@ export default function SignalsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Trading Signals</h1>
-          <p className="text-dark-400">AI-generated signals for your preferred markets</p>
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold mb-1">Trading Signals</h1>
+        <p className="text-dark-400 text-sm sm:text-base">AI-generated signals for your preferred markets</p>
       </div>
 
       {/* Filters */}
@@ -173,7 +171,7 @@ export default function SignalsPage() {
           </button>
         ))}
 
-        <div className="w-px h-8 bg-dark-700 mx-2" />
+        <div className="hidden sm:block w-px h-8 bg-dark-700 mx-2" />
 
         <span className="text-sm text-dark-400 self-center">Market:</span>
         {['all', 'crypto', 'forex'].map((m) => (
@@ -211,9 +209,9 @@ export default function SignalsPage() {
                 className={`signal-card ${signal.direction.toLowerCase()} p-5`}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold">{signal.asset}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-bold">{signal.asset}</h3>
                     <span
                       className={signal.direction === 'BUY' ? 'badge-buy' : 'badge-sell'}
                     >
@@ -225,13 +223,13 @@ export default function SignalsPage() {
                       {signal.direction}
                     </span>
                     <span className="badge-neutral">{signal.timeframe}</span>
-                    <span className="badge-neutral">{signal.strategy}</span>
+                    <span className="badge-neutral hidden sm:inline-flex">{signal.strategy}</span>
                     <span className={cn('badge-neutral', status.color, status.bg)}>
                       <StatusIcon className="w-3 h-3 mr-1" />
                       {status.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <span
                       className={`text-sm font-bold ${getConfidenceColor(signal.confidenceScore)}`}
                     >
@@ -274,7 +272,7 @@ export default function SignalsPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between mt-3 text-xs text-dark-500">
+                <div className="flex flex-wrap items-center justify-between mt-3 text-xs text-dark-500">
                   <span>{formatDate(signal.createdAt)}</span>
                   {signal.result !== undefined && (
                     <span

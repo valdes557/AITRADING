@@ -272,8 +272,8 @@ export default function AdminPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Admin Panel</h1>
-        <p className="text-dark-400">Manage clients, plans, testimonials, and platform settings</p>
+        <h1 className="text-xl sm:text-2xl font-bold mb-1">Admin Panel</h1>
+        <p className="text-dark-400 text-sm sm:text-base">Manage clients, plans, testimonials, and platform settings</p>
       </div>
 
       {/* Quick Stats */}
@@ -281,19 +281,19 @@ export default function AdminPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="stat-card">
             <span className="text-xs text-dark-400 uppercase">Users</span>
-            <p className="text-2xl font-bold">{stats.totalUsers}</p>
+            <p className="text-lg sm:text-2xl font-bold">{stats.totalUsers}</p>
           </div>
           <div className="stat-card">
             <span className="text-xs text-dark-400 uppercase">Active Subs</span>
-            <p className="text-2xl font-bold text-primary-400">{stats.activeSubscriptions}</p>
+            <p className="text-lg sm:text-2xl font-bold text-primary-400">{stats.activeSubscriptions}</p>
           </div>
           <div className="stat-card">
             <span className="text-xs text-dark-400 uppercase">Revenue</span>
-            <p className="text-2xl font-bold text-buy">${stats.revenue}</p>
+            <p className="text-lg sm:text-2xl font-bold text-buy">${stats.revenue}</p>
           </div>
           <div className="stat-card">
             <span className="text-xs text-dark-400 uppercase">Signals</span>
-            <p className="text-2xl font-bold">{stats.signalsGenerated}</p>
+            <p className="text-lg sm:text-2xl font-bold">{stats.signalsGenerated}</p>
           </div>
         </div>
       )}
@@ -628,13 +628,13 @@ export default function AdminPage() {
               testimonials.map((t) => (
                 <div
                   key={t._id}
-                  className={cn('card flex items-start justify-between gap-4', !t.isVisible && 'opacity-50')}
+                  className={cn('card flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4', !t.isVisible && 'opacity-50')}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <p className="font-semibold">{t.name}</p>
                       <span className="text-xs text-dark-400">{t.role}</span>
-                      <div className="flex gap-0.5 ml-2">
+                      <div className="flex gap-0.5">
                         {Array.from({ length: t.rating }).map((_, j) => (
                           <Star key={j} className="w-3 h-3 text-warning fill-warning" />
                         ))}

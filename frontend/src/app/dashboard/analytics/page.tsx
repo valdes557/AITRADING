@@ -73,12 +73,12 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Analytics</h1>
-          <p className="text-dark-400">Deep dive into your trading performance</p>
+          <h1 className="text-xl sm:text-2xl font-bold mb-1">Analytics</h1>
+          <p className="text-dark-400 text-sm sm:text-base">Deep dive into your trading performance</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(['7d', '30d', '90d', 'all'] as const).map((p) => (
             <button
               key={p}
@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
           <BarChart3 className="w-5 h-5 text-primary-400" />
           <h2 className="text-lg font-semibold">Weekly P&L</h2>
         </div>
-        <div className="h-64">
+        <div className="h-48 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyPnl}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
             <Target className="w-5 h-5 text-buy" />
             <h2 className="text-lg font-semibold">Win Rate Trend</h2>
           </div>
-          <div className="h-56">
+          <div className="h-44 sm:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyWinRate}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -145,16 +145,16 @@ export default function AnalyticsPage() {
             <PieChart className="w-5 h-5 text-primary-400" />
             <h2 className="text-lg font-semibold">Asset Distribution</h2>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="h-48 w-48">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="h-40 w-40 sm:h-48 sm:w-48 flex-shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie>
                   <Pie
                     data={assetDistribution}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
+                    innerRadius={35}
+                    outerRadius={60}
                     dataKey="value"
                     stroke="none"
                   >
@@ -166,7 +166,7 @@ export default function AnalyticsPage() {
                 </RechartsPie>
               </ResponsiveContainer>
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 w-full space-y-2">
               {assetDistribution.map((item) => (
                 <div key={item.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
