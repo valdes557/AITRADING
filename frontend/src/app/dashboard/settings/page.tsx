@@ -12,9 +12,14 @@ import {
   Globe,
   Phone,
   CheckCircle,
+  Send,
+  Copy,
+  ExternalLink,
+  Unlink,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { preferencesAPI, subscriptionAPI } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -25,39 +30,46 @@ const marketOptions = [
 ];
 
 const styleOptions = [
-  { value: 'scalping', label: 'Scalping', desc: 'Quick trades, small profits' },
-  { value: 'intraday', label: 'Intraday', desc: 'Same-day positions' },
-  { value: 'swing', label: 'Swing', desc: 'Multi-day holds' },
+  { value: 'scalping', label: 'Scalping' },
+  { value: 'intraday', label: 'Intraday' },
+  { value: 'swing', label: 'Swing' },
 ];
 
 const strategyOptions = [
-  { value: 'smart_money', label: 'Smart Money', desc: 'Institutional order flow' },
-  { value: 'order_blocks', label: 'Order Blocks', desc: 'Supply & demand zones' },
-  { value: 'breakout', label: 'Breakout', desc: 'Range breakout setups' },
-  { value: 'trend_following', label: 'Trend Following', desc: 'EMA crossover trends' },
+  { value: 'smart_money', label: 'Smart Money' },
+  { value: 'order_blocks', label: 'Order Blocks' },
+  { value: 'breakout', label: 'Breakout' },
+  { value: 'trend_following', label: 'Trend Following' },
 ];
 
 const timeframeOptions = [
-  { value: 'M5', label: 'M5', desc: '5 minutes' },
-  { value: 'M15', label: 'M15', desc: '15 minutes' },
-  { value: 'H1', label: 'H1', desc: '1 hour' },
-  { value: 'H4', label: 'H4', desc: '4 hours' },
+  { value: 'M5', label: 'M5' },
+  { value: 'M15', label: 'M15' },
+  { value: 'H1', label: 'H1' },
+  { value: 'H4', label: 'H4' },
 ];
 
 const defaultPlans = [
-  { id: 'free', name: 'Free', price: 0, signals: '2/day' },
-  { id: 'basic', name: 'Basic', price: 19, signals: 'Unlimited' },
-  { id: 'pro', name: 'Pro', price: 49, signals: 'Unlimited + AI' },
-  { id: 'vip', name: 'VIP', price: 99, signals: 'Premium + Analysis' },
+  { id: 'basic', name: 'Basic', price: 19, signals: 'Illimite' },
+  { id: 'pro', name: 'Pro', price: 49, signals: 'Illimite + IA' },
+  { id: 'vip', name: 'VIP', price: 99, signals: 'Premium + Analyse' },
 ];
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuthStore();
+  const { t } = useI18n();
   const [saving, setSaving] = useState(false);
   const [plans, setPlans] = useState(defaultPlans);
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [whatsappSaving, setWhatsappSaving] = useState(false);
   const [whatsappLinked, setWhatsappLinked] = useState(!!user?.whatsappNumber);
+
+  // Telegram linking state
+  const [telegramLinked, setTelegramLinked] = useState(!!user?.telegramChatId);
+  const [telegramCode, setTelegramCode] = useState('');
+  const [telegramBotLink, setTelegramBotLink] = useState('');
+  const [telegramLoading, setTelegramLoading] = useState(false);
+
   const [preferences, setPreferences] = useState({
     markets: user?.preferences?.markets || ['crypto'],
     tradingStyle: user?.preferences?.tradingStyle || ['intraday'],
@@ -76,17 +88,61 @@ export default function SettingsPage() {
       try {
         const { data } = await subscriptionAPI.getPlans();
         if (data.plans?.length > 0) {
-          setPlans(data.plans.map((p: any) => ({
+          setPlans(data.plans.filter((p: any) => p.id !== 'free').map((p: any) => ({
             id: p.id,
             name: p.name,
             price: p.price,
-            signals: p.signalsPerDay === 2 ? '2/day' : p.id === 'vip' ? 'Premium + Analysis' : p.id === 'pro' ? 'Unlimited + AI' : 'Unlimited',
+            signals: p.id === 'vip' ? 'Premium + Analyse' : p.id === 'pro' ? 'Illimite + IA' : 'Illimite',
           })));
         }
       } catch {}
     };
     fetchPlans();
+
+    // Check Telegram status
+    const fetchTelegramStatus = async () => {
+      try {
+        const { data } = await preferencesAPI.getTelegramStatus();
+        setTelegramLinked(data.linked);
+        if (data.botLink) setTelegramBotLink(data.botLink);
+      } catch {}
+    };
+    fetchTelegramStatus();
   }, []);
+
+  const handleGenerateTelegramCode = async () => {
+    setTelegramLoading(true);
+    try {
+      const { data } = await preferencesAPI.generateTelegramCode();
+      setTelegramCode(data.code);
+      if (data.botLink) setTelegramBotLink(data.botLink);
+      toast.success(t('settings.telegramCodeGenerated'));
+    } catch {
+      toast.error(t('settings.telegramCodeError'));
+    } finally {
+      setTelegramLoading(false);
+    }
+  };
+
+  const handleUnlinkTelegram = async () => {
+    try {
+      await preferencesAPI.unlinkTelegram();
+      setTelegramLinked(false);
+      setTelegramCode('');
+      setPreferences((prev) => ({
+        ...prev,
+        notifications: { ...prev.notifications, telegram: false },
+      }));
+      toast.success(t('settings.telegramUnlinked'));
+    } catch {
+      toast.error('Erreur');
+    }
+  };
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(telegramCode);
+    toast.success(t('settings.codeCopied'));
+  };
 
   const handleLinkWhatsApp = async () => {
     if (!whatsappNumber) return;
@@ -98,9 +154,9 @@ export default function SettingsPage() {
         ...prev,
         notifications: { ...prev.notifications, whatsapp: true },
       }));
-      toast.success('WhatsApp linked!');
+      toast.success('WhatsApp lie !');
     } catch {
-      toast.error('Invalid number. Use format: +1234567890');
+      toast.error('Numero invalide. Format: +1234567890');
     } finally {
       setWhatsappSaving(false);
     }
@@ -113,7 +169,7 @@ export default function SettingsPage() {
     setPreferences((prev) => {
       const arr = prev[key] as string[];
       if (arr.includes(value)) {
-        if (arr.length === 1) return prev; // At least one must be selected
+        if (arr.length === 1) return prev;
         return { ...prev, [key]: arr.filter((v) => v !== value) };
       }
       return { ...prev, [key]: [...arr, value] };
@@ -125,9 +181,9 @@ export default function SettingsPage() {
     try {
       await preferencesAPI.update(preferences);
       updateUser({ preferences: preferences as any });
-      toast.success('Preferences saved!');
+      toast.success(t('settings.saved'));
     } catch {
-      toast.error('Failed to save preferences');
+      toast.error(t('settings.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -135,7 +191,7 @@ export default function SettingsPage() {
 
   const renderChipGroup = (
     key: 'markets' | 'tradingStyle' | 'strategies' | 'timeframes',
-    options: { value: string; label: string; desc?: string; icon?: string }[]
+    options: { value: string; label: string; icon?: string }[]
   ) => (
     <div className="flex flex-wrap gap-3">
       {options.map((opt) => {
@@ -155,9 +211,6 @@ export default function SettingsPage() {
               {opt.icon && <span>{opt.icon}</span>}
               <span>{opt.label}</span>
             </div>
-            {opt.desc && (
-              <p className="text-xs mt-0.5 opacity-60">{opt.desc}</p>
-            )}
           </button>
         );
       })}
@@ -167,19 +220,17 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Settings</h1>
-        <p className="text-dark-400">
-          Configure your trading preferences. Signals will match these settings.
-        </p>
+        <h1 className="text-2xl font-bold mb-1">{t('settings.title')}</h1>
+        <p className="text-dark-400">{t('settings.subtitle')}</p>
       </div>
 
       {/* Current Plan */}
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <Crown className="w-5 h-5 text-warning" />
-          <h2 className="text-lg font-semibold">Subscription Plan</h2>
+          <h2 className="text-lg font-semibold">{t('settings.plan')}</h2>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -193,25 +244,23 @@ export default function SettingsPage() {
               <p className="font-bold">{plan.name}</p>
               <p className="text-2xl font-bold mt-1">
                 ${plan.price}
-                <span className="text-sm text-dark-400 font-normal">/mo</span>
+                <span className="text-sm text-dark-400 font-normal">/mois</span>
               </p>
               <p className="text-xs text-dark-400 mt-1">{plan.signals}</p>
               {user?.plan === plan.id ? (
                 <span className="inline-block mt-2 text-xs text-primary-400 font-semibold">
-                  Current Plan
+                  {t('settings.currentPlan')}
                 </span>
               ) : (
-                plan.id !== 'free' && (
-                  <button className="btn-primary text-xs mt-2 py-1 px-3">
-                    Upgrade
-                  </button>
-                )
+                <button className="btn-primary text-xs mt-2 py-1 px-3">
+                  {t('settings.upgrade')}
+                </button>
               )}
             </div>
           ))}
         </div>
         <p className="text-xs text-dark-500 mt-3">
-          Payments accepted: USDT TRC20, Binance Pay
+          {t('settings.paymentMethods')}
         </p>
       </div>
 
@@ -219,7 +268,7 @@ export default function SettingsPage() {
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <Globe className="w-5 h-5 text-primary-400" />
-          <h2 className="text-lg font-semibold">Markets</h2>
+          <h2 className="text-lg font-semibold">{t('settings.markets')}</h2>
         </div>
         {renderChipGroup('markets', marketOptions)}
       </div>
@@ -228,7 +277,7 @@ export default function SettingsPage() {
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <BarChart3 className="w-5 h-5 text-primary-400" />
-          <h2 className="text-lg font-semibold">Trading Style</h2>
+          <h2 className="text-lg font-semibold">{t('settings.tradingStyle')}</h2>
         </div>
         {renderChipGroup('tradingStyle', styleOptions)}
       </div>
@@ -237,7 +286,7 @@ export default function SettingsPage() {
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <Brain className="w-5 h-5 text-primary-400" />
-          <h2 className="text-lg font-semibold">Strategies</h2>
+          <h2 className="text-lg font-semibold">{t('settings.strategies')}</h2>
         </div>
         {renderChipGroup('strategies', strategyOptions)}
       </div>
@@ -246,7 +295,7 @@ export default function SettingsPage() {
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <Clock className="w-5 h-5 text-primary-400" />
-          <h2 className="text-lg font-semibold">Timeframes</h2>
+          <h2 className="text-lg font-semibold">{t('settings.timeframes')}</h2>
         </div>
         {renderChipGroup('timeframes', timeframeOptions)}
       </div>
@@ -255,14 +304,14 @@ export default function SettingsPage() {
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <Bell className="w-5 h-5 text-primary-400" />
-          <h2 className="text-lg font-semibold">Notifications</h2>
+          <h2 className="text-lg font-semibold">{t('settings.notifications')}</h2>
         </div>
         <div className="space-y-3">
           {[
-            { key: 'email', label: 'Email Notifications', desc: 'Receive signals via email' },
-            { key: 'whatsapp', label: 'WhatsApp Alerts', desc: 'Signal alerts via WhatsApp' },
-            { key: 'telegram', label: 'Telegram Alerts', desc: 'Fast alerts via Telegram bot' },
-            { key: 'webPush', label: 'Browser Push', desc: 'Desktop notifications' },
+            { key: 'email', label: t('settings.emailNotif'), desc: t('settings.emailNotifDesc') },
+            { key: 'whatsapp', label: t('settings.whatsappNotif'), desc: t('settings.whatsappNotifDesc') },
+            { key: 'telegram', label: t('settings.telegramNotif'), desc: t('settings.telegramNotifDesc') },
+            { key: 'webPush', label: t('settings.browserPush'), desc: t('settings.browserPushDesc') },
           ].map((notif) => (
             <div
               key={notif.key}
@@ -304,15 +353,90 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Telegram Linking */}
+      <div className="card">
+        <div className="flex items-center gap-3 mb-4">
+          <Send className="w-5 h-5 text-blue-400" />
+          <h2 className="text-lg font-semibold">{t('settings.telegramLink')}</h2>
+        </div>
+
+        {telegramLinked ? (
+          <div>
+            <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-700/30 rounded-lg mb-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <p className="text-sm text-green-300 font-medium">{t('settings.telegramActive')}</p>
+            </div>
+            <button
+              onClick={handleUnlinkTelegram}
+              className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
+            >
+              <Unlink className="w-4 h-4" />
+              {t('settings.telegramDisconnect')}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-dark-400">{t('settings.telegramInstructions')}</p>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{t('settings.telegramStep1')}</p>
+              {telegramBotLink && (
+                <a
+                  href={telegramBotLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-600/30 transition-colors text-sm"
+                >
+                  <Send className="w-4 h-4" />
+                  {t('settings.openBot')}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+
+              <p className="text-sm font-medium">{t('settings.telegramStep2')}</p>
+              <button
+                onClick={handleGenerateTelegramCode}
+                disabled={telegramLoading}
+                className="btn-primary flex items-center gap-2 px-5"
+              >
+                {telegramLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+                {t('settings.generateCode')}
+              </button>
+
+              {telegramCode && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-3">
+                    <code className="px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg text-primary-300 font-mono text-lg tracking-widest">
+                      {telegramCode}
+                    </code>
+                    <button
+                      onClick={copyCode}
+                      className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                      title="Copier"
+                    >
+                      <Copy className="w-4 h-4 text-dark-400" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-dark-500 mt-2">{t('settings.telegramStep3')}</p>
+                  <p className="text-xs text-warning mt-1">{t('settings.codeExpiry')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* WhatsApp Number */}
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
           <Phone className="w-5 h-5 text-buy" />
-          <h2 className="text-lg font-semibold">WhatsApp Number</h2>
+          <h2 className="text-lg font-semibold">{t('settings.whatsappTitle')}</h2>
         </div>
-        <p className="text-sm text-dark-400 mb-3">
-          Enter your WhatsApp number with country code to receive signal alerts.
-        </p>
+        <p className="text-sm text-dark-400 mb-3">{t('settings.whatsappDesc')}</p>
         <div className="flex gap-3">
           <input
             type="tel"
@@ -333,13 +457,13 @@ export default function SettingsPage() {
             ) : (
               <Phone className="w-4 h-4" />
             )}
-            {whatsappLinked ? 'Linked' : 'Link'}
+            {whatsappLinked ? t('settings.linked') : t('settings.link')}
           </button>
         </div>
         {whatsappLinked && (
           <p className="text-xs text-buy mt-2 flex items-center gap-1">
             <CheckCircle className="w-3 h-3" />
-            WhatsApp notifications active
+            {t('settings.whatsappActive')}
           </p>
         )}
       </div>
@@ -356,7 +480,7 @@ export default function SettingsPage() {
           ) : (
             <Save className="w-5 h-5" />
           )}
-          Save Preferences
+          {t('settings.save')}
         </button>
       </div>
     </div>

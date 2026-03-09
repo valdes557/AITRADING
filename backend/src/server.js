@@ -16,6 +16,7 @@ const adminRoutes = require('./routes/admin');
 const testimonialRoutes = require('./routes/testimonials');
 const { router: notificationRoutes } = require('./routes/notifications');
 const { startCronJobs } = require('./services/signalCron');
+const { startTelegramBot } = require('./services/telegramBot');
 
 const app = express();
 
@@ -90,6 +91,7 @@ mongoose
   .then(() => {
     console.log('MongoDB connected successfully');
     startCronJobs();
+    startTelegramBot();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

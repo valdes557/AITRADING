@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { generateLinkingCode, getBotUsername } = require('../services/telegramBot');
 
 const router = express.Router();
 
@@ -48,6 +49,52 @@ router.put('/telegram', protect, async (req, res) => {
     user.preferences.notifications.telegram = true;
     await user.save();
     res.json({ message: 'Telegram linked successfully', telegramChatId: chatId });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/users/telegram/link-code
+router.post('/telegram/link-code', protect, async (req, res) => {
+  try {
+    const code = generateLinkingCode(req.user._id.toString());
+    const botName = await getBotUsername();
+    res.json({
+      code,
+      botUsername: botName,
+      botLink: botName ? `https://t.me/${botName}` : null,
+      expiresIn: '10 minutes',
+    });
+  } catch (error) {
+    console.error('Telegram link code error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/users/telegram/status
+router.get('/telegram/status', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const botName = await getBotUsername();
+    res.json({
+      linked: !!user.telegramChatId,
+      chatId: user.telegramChatId || null,
+      botUsername: botName,
+      botLink: botName ? `https://t.me/${botName}` : null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE /api/users/telegram/unlink
+router.delete('/telegram/unlink', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.telegramChatId = undefined;
+    user.preferences.notifications.telegram = false;
+    await user.save();
+    res.json({ message: 'Telegram unlinked' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

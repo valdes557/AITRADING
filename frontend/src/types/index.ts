@@ -3,7 +3,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  plan: 'free' | 'basic' | 'pro' | 'vip';
+  plan: 'free' | 'basic' | 'pro' | 'vip' | 'expired';
   planExpiresAt?: string;
   preferences: UserPreferences;
   telegramChatId?: string;
@@ -89,7 +89,7 @@ export interface DailyAnalysis {
 export interface Subscription {
   _id: string;
   userId: string;
-  plan: 'free' | 'basic' | 'pro' | 'vip';
+  plan: 'free' | 'basic' | 'pro' | 'vip' | 'expired';
   status: 'active' | 'expired' | 'cancelled';
   startDate: string;
   endDate: string;
