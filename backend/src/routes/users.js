@@ -129,4 +129,17 @@ router.put('/whatsapp', protect, async (req, res) => {
   }
 });
 
+// DELETE /api/users/whatsapp/unlink
+router.delete('/whatsapp/unlink', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.whatsappNumber = undefined;
+    user.preferences.notifications.whatsapp = false;
+    await user.save();
+    res.json({ message: 'WhatsApp unlinked' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

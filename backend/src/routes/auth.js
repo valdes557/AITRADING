@@ -89,6 +89,8 @@ router.post(
           planExpiresAt: user.planExpiresAt,
           preferences: user.preferences,
           role: user.role,
+          telegramChatId: user.telegramChatId,
+          whatsappNumber: user.whatsappNumber,
           createdAt: user.createdAt,
         },
       });
@@ -145,6 +147,7 @@ router.post(
           preferences: user.preferences,
           role: user.role,
           telegramChatId: user.telegramChatId,
+          whatsappNumber: user.whatsappNumber,
           createdAt: user.createdAt,
         },
       });
@@ -170,6 +173,7 @@ router.get('/profile', protect, async (req, res) => {
         preferences: user.preferences,
         role: user.role,
         telegramChatId: user.telegramChatId,
+        whatsappNumber: user.whatsappNumber,
         createdAt: user.createdAt,
       },
     });
@@ -198,6 +202,8 @@ router.put('/profile', protect, async (req, res) => {
         plan: user.plan,
         preferences: user.preferences,
         role: user.role,
+        telegramChatId: user.telegramChatId,
+        whatsappNumber: user.whatsappNumber,
       },
     });
   } catch (error) {

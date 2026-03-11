@@ -77,6 +77,7 @@ export const preferencesAPI = {
   get: () => api.get('/users/preferences'),
   update: (data: any) => api.put('/users/preferences', data),
   linkWhatsApp: (phoneNumber: string) => api.put('/users/whatsapp', { phoneNumber }),
+  unlinkWhatsApp: () => api.delete('/users/whatsapp/unlink'),
   getTelegramStatus: () => api.get('/users/telegram/status'),
   generateTelegramCode: () => api.post('/users/telegram/link-code'),
   unlinkTelegram: () => api.delete('/users/telegram/unlink'),

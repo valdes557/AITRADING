@@ -63,6 +63,7 @@ export default function SettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [whatsappSaving, setWhatsappSaving] = useState(false);
   const [whatsappLinked, setWhatsappLinked] = useState(!!user?.whatsappNumber);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   // Telegram linking state
   const [telegramLinked, setTelegramLinked] = useState(!!user?.telegramChatId);
@@ -99,6 +100,31 @@ export default function SettingsPage() {
     };
     fetchPlans();
 
+    // Fetch current preferences from server
+    const fetchPreferences = async () => {
+      try {
+        const { data } = await preferencesAPI.get();
+        if (data.preferences) {
+          setPreferences({
+            markets: data.preferences.markets || ['crypto'],
+            tradingStyle: data.preferences.tradingStyle || ['intraday'],
+            strategies: data.preferences.strategies || ['smart_money'],
+            timeframes: data.preferences.timeframes || ['H1'],
+            notifications: data.preferences.notifications || {
+              telegram: false,
+              email: true,
+              whatsapp: false,
+              webPush: false,
+            },
+          });
+        }
+        setPrefsLoaded(true);
+      } catch {
+        setPrefsLoaded(true);
+      }
+    };
+    fetchPreferences();
+
     // Check Telegram status
     const fetchTelegramStatus = async () => {
       try {
@@ -108,7 +134,13 @@ export default function SettingsPage() {
       } catch {}
     };
     fetchTelegramStatus();
-  }, []);
+
+    // Load WhatsApp from user profile
+    if (user?.whatsappNumber) {
+      setWhatsappNumber(user.whatsappNumber);
+      setWhatsappLinked(true);
+    }
+  }, [user?.whatsappNumber]);
 
   const handleGenerateTelegramCode = async () => {
     setTelegramLoading(true);
@@ -154,11 +186,28 @@ export default function SettingsPage() {
         ...prev,
         notifications: { ...prev.notifications, whatsapp: true },
       }));
+      updateUser({ whatsappNumber } as any);
       toast.success('WhatsApp lie !');
     } catch {
       toast.error('Numero invalide. Format: +1234567890');
     } finally {
       setWhatsappSaving(false);
+    }
+  };
+
+  const handleUnlinkWhatsApp = async () => {
+    try {
+      await preferencesAPI.unlinkWhatsApp();
+      setWhatsappLinked(false);
+      setWhatsappNumber('');
+      setPreferences((prev) => ({
+        ...prev,
+        notifications: { ...prev.notifications, whatsapp: false },
+      }));
+      updateUser({ whatsappNumber: undefined } as any);
+      toast.success(t('settings.whatsappUnlinked'));
+    } catch {
+      toast.error('Erreur');
     }
   };
 
@@ -436,35 +485,49 @@ export default function SettingsPage() {
           <Phone className="w-5 h-5 text-buy" />
           <h2 className="text-lg font-semibold">{t('settings.whatsappTitle')}</h2>
         </div>
-        <p className="text-sm text-dark-400 mb-3">{t('settings.whatsappDesc')}</p>
-        <div className="flex gap-3">
-          <input
-            type="tel"
-            value={whatsappNumber}
-            onChange={(e) => { setWhatsappNumber(e.target.value); setWhatsappLinked(false); }}
-            placeholder="+1234567890"
-            className="input-field flex-1"
-          />
-          <button
-            onClick={handleLinkWhatsApp}
-            disabled={whatsappSaving || !whatsappNumber}
-            className="btn-primary flex items-center gap-2 px-5"
-          >
-            {whatsappSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : whatsappLinked ? (
-              <CheckCircle className="w-4 h-4" />
-            ) : (
-              <Phone className="w-4 h-4" />
-            )}
-            {whatsappLinked ? t('settings.linked') : t('settings.link')}
-          </button>
-        </div>
-        {whatsappLinked && (
-          <p className="text-xs text-buy mt-2 flex items-center gap-1">
-            <CheckCircle className="w-3 h-3" />
-            {t('settings.whatsappActive')}
-          </p>
+
+        {whatsappLinked ? (
+          <div>
+            <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-700/30 rounded-lg mb-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <div>
+                <p className="text-sm text-green-300 font-medium">{t('settings.whatsappActive')}</p>
+                <p className="text-xs text-dark-400 font-mono mt-0.5">{whatsappNumber}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleUnlinkWhatsApp}
+              className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
+            >
+              <Unlink className="w-4 h-4" />
+              {t('settings.whatsappDisconnect')}
+            </button>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-dark-400 mb-3">{t('settings.whatsappDesc')}</p>
+            <div className="flex gap-3">
+              <input
+                type="tel"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="+1234567890"
+                className="input-field flex-1"
+              />
+              <button
+                onClick={handleLinkWhatsApp}
+                disabled={whatsappSaving || !whatsappNumber}
+                className="btn-primary flex items-center gap-2 px-5"
+              >
+                {whatsappSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Phone className="w-4 h-4" />
+                )}
+                {t('settings.link')}
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
