@@ -135,15 +135,47 @@ router.get('/subscriptions', async (req, res) => {
   }
 });
 
-// POST /api/admin/signals - Create manual signal
+// POST /api/admin/signals - Create manual signal (same as AI, with notifications)
 router.post('/signals', async (req, res) => {
   try {
+    const { asset, market, direction, entry, stopLoss, takeProfit, timeframe, strategy, confidenceScore, aiExplanation, isPremium } = req.body;
+
+    if (!asset || !market || !direction || !entry || !stopLoss || !takeProfit || !timeframe || !strategy || !confidenceScore || !aiExplanation) {
+      return res.status(400).json({ message: 'All signal fields are required' });
+    }
+
+    // Calculate risk/reward
+    let riskReward;
+    if (direction === 'BUY') {
+      riskReward = Math.round(((takeProfit - entry) / (entry - stopLoss)) * 100) / 100;
+    } else {
+      riskReward = Math.round(((entry - takeProfit) / (stopLoss - entry)) * 100) / 100;
+    }
+
     const signal = await Signal.create({
-      ...req.body,
+      asset,
+      market,
+      direction,
+      entry: parseFloat(entry),
+      stopLoss: parseFloat(stopLoss),
+      takeProfit: parseFloat(takeProfit),
+      riskReward,
+      timeframe,
+      strategy,
+      confidenceScore: parseInt(confidenceScore),
+      aiExplanation,
+      isPremium: isPremium || false,
       isManual: true,
       createdBy: req.user._id,
     });
-    res.status(201).json({ signal });
+
+    // Dispatch notifications (email, telegram, whatsapp) exactly like AI signals
+    const { dispatchSignalNotifications } = require('../services/notificationDispatcher');
+    dispatchSignalNotifications(signal).catch((err) =>
+      console.error('[Admin Signal] Notification dispatch error:', err.message)
+    );
+
+    res.status(201).json({ signal, message: 'Signal created and notifications sent' });
   } catch (error) {
     console.error('Create manual signal error:', error);
     res.status(500).json({ message: 'Server error' });

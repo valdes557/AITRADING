@@ -127,6 +127,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'dash.journal': 'Journal',
     'dash.analytics': 'Analytiques',
     'dash.settings': 'Parametres',
+    'dash.chat': 'Groupe Prive',
     'dash.admin': 'Administration',
     'dash.signOut': 'Deconnexion',
     'dash.upgrade': 'Ameliorer',
@@ -176,6 +177,18 @@ const translations: Record<Locale, Record<string, string>> = {
     'settings.save': 'Sauvegarder les Preferences',
     'settings.saved': 'Preferences sauvegardees !',
     'settings.saveFailed': 'Echec de la sauvegarde',
+
+    // Chat
+    'chat.title': 'Groupe Prive',
+    'chat.subtitle': 'Echangez avec l\'admin et les autres abonnes',
+    'chat.members': 'membres',
+    'chat.placeholder': 'Ecrivez un message...',
+    'chat.send': 'Envoyer',
+    'chat.empty': 'Aucun message. Soyez le premier a ecrire !',
+    'chat.loadMore': 'Charger plus',
+    'chat.locked': 'Groupe Reserve aux Abonnes',
+    'chat.lockedDesc': 'Souscrivez a un abonnement pour rejoindre le groupe prive et echanger avec l\'equipe et les autres traders.',
+    'chat.upgrade': 'Voir les Plans',
 
     // Misc
     'misc.loading': 'Chargement...',
@@ -304,6 +317,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'dash.journal': 'Journal',
     'dash.analytics': 'Analytics',
     'dash.settings': 'Settings',
+    'dash.chat': 'Private Group',
     'dash.admin': 'Admin',
     'dash.signOut': 'Sign Out',
     'dash.upgrade': 'Upgrade',
@@ -353,6 +367,18 @@ const translations: Record<Locale, Record<string, string>> = {
     'settings.save': 'Save Preferences',
     'settings.saved': 'Preferences saved!',
     'settings.saveFailed': 'Failed to save preferences',
+
+    // Chat
+    'chat.title': 'Private Group',
+    'chat.subtitle': 'Chat with admin and fellow subscribers',
+    'chat.members': 'members',
+    'chat.placeholder': 'Write a message...',
+    'chat.send': 'Send',
+    'chat.empty': 'No messages yet. Be the first to write!',
+    'chat.loadMore': 'Load more',
+    'chat.locked': 'Subscribers Only Group',
+    'chat.lockedDesc': 'Subscribe to a plan to join the private group and chat with the team and other traders.',
+    'chat.upgrade': 'View Plans',
 
     // Misc
     'misc.loading': 'Loading...',

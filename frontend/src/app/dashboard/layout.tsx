@@ -17,6 +17,7 @@ import {
   User,
   BarChart3,
   Shield,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
@@ -39,6 +40,7 @@ export default function DashboardLayout({
     { href: '/dashboard/signals', icon: Zap, label: t('dash.signals'), adminOnly: false },
     { href: '/dashboard/journal', icon: BookOpen, label: t('dash.journal'), adminOnly: false },
     { href: '/dashboard/analytics', icon: BarChart3, label: t('dash.analytics'), adminOnly: false },
+    { href: '/dashboard/chat', icon: MessageSquare, label: t('dash.chat'), adminOnly: false },
     { href: '/dashboard/settings', icon: Settings, label: t('dash.settings'), adminOnly: false },
     { href: '/dashboard/admin', icon: Shield, label: t('dash.admin'), adminOnly: true },
   ];

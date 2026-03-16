@@ -15,6 +15,7 @@ const subscriptionRoutes = require('./routes/subscriptions');
 const adminRoutes = require('./routes/admin');
 const testimonialRoutes = require('./routes/testimonials');
 const { router: notificationRoutes } = require('./routes/notifications');
+const chatRoutes = require('./routes/chat');
 const { startCronJobs } = require('./services/signalCron');
 const { startTelegramBot } = require('./services/telegramBot');
 
@@ -67,6 +68,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

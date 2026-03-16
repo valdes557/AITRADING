@@ -18,8 +18,10 @@ import {
   Ban,
   CheckCircle,
   Image,
+  TrendingUp,
+  Send,
 } from 'lucide-react';
-import { adminAPI } from '@/lib/api';
+import { adminAPI, chatAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -57,7 +59,7 @@ interface ClientUser {
   createdAt: string;
 }
 
-type TabKey = 'clients' | 'plans' | 'testimonials' | 'settings';
+type TabKey = 'clients' | 'signals' | 'plans' | 'testimonials' | 'settings';
 
 export default function AdminPage() {
   const { user } = useAuthStore();
@@ -87,6 +89,23 @@ export default function AdminPage() {
     rating: 5,
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Manual signal form
+  const [signalForm, setSignalForm] = useState({
+    asset: '',
+    market: 'crypto',
+    direction: 'BUY',
+    entry: '',
+    stopLoss: '',
+    takeProfit: '',
+    timeframe: 'H1',
+    strategy: 'smart_money',
+    confidenceScore: '75',
+    aiExplanation: '',
+    isPremium: false,
+  });
+  const [sendingSignal, setSendingSignal] = useState(false);
+  const [shareToChat, setShareToChat] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -242,6 +261,56 @@ export default function AdminPage() {
     }
   };
 
+  const handleSendSignal = async () => {
+    const { asset, market, direction, entry, stopLoss, takeProfit, timeframe, strategy, confidenceScore, aiExplanation } = signalForm;
+    if (!asset || !entry || !stopLoss || !takeProfit || !aiExplanation) {
+      toast.error('All fields are required');
+      return;
+    }
+    setSendingSignal(true);
+    try {
+      const { data } = await adminAPI.createManualSignal({
+        asset: asset.toUpperCase(),
+        market,
+        direction,
+        entry: parseFloat(entry),
+        stopLoss: parseFloat(stopLoss),
+        takeProfit: parseFloat(takeProfit),
+        timeframe,
+        strategy,
+        confidenceScore: parseInt(confidenceScore),
+        aiExplanation,
+        isPremium: signalForm.isPremium,
+      });
+
+      // Optionally share the signal in the group chat
+      if (shareToChat && data.signal?._id) {
+        try {
+          await chatAPI.sendSignalMessage(data.signal._id);
+        } catch {}
+      }
+
+      toast.success('Signal sent + notifications dispatched!');
+      setSignalForm({
+        asset: '',
+        market: 'crypto',
+        direction: 'BUY',
+        entry: '',
+        stopLoss: '',
+        takeProfit: '',
+        timeframe: 'H1',
+        strategy: 'smart_money',
+        confidenceScore: '75',
+        aiExplanation: '',
+        isPremium: false,
+      });
+    } catch {
+      toast.error('Failed to send signal');
+    } finally {
+      setSendingSignal(false);
+    }
+  };
+
   const planColors: Record<string, string> = {
     free: 'text-dark-400 bg-dark-700',
     basic: 'text-blue-400 bg-blue-500/15',
@@ -302,6 +371,7 @@ export default function AdminPage() {
       <div className="flex gap-2 border-b border-dark-700 pb-2 overflow-x-auto">
         {[
           { key: 'clients' as TabKey, label: 'Clients', icon: Users },
+          { key: 'signals' as TabKey, label: 'Send Signal', icon: TrendingUp },
           { key: 'plans' as TabKey, label: 'Plan Pricing', icon: DollarSign },
           { key: 'testimonials' as TabKey, label: 'Testimonials', icon: MessageSquare },
           { key: 'settings' as TabKey, label: 'Settings', icon: Settings },
@@ -407,6 +477,180 @@ export default function AdminPage() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========== SEND SIGNAL TAB ========== */}
+      {activeTab === 'signals' && (
+        <div className="space-y-4">
+          <p className="text-sm text-dark-400">
+            Create and send a manual trading signal. Users will receive notifications (Email, Telegram, WhatsApp) just like AI-generated signals.
+          </p>
+
+          <div className="card max-w-2xl">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary-400" />
+              New Signal
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Asset *</label>
+                <input
+                  type="text"
+                  value={signalForm.asset}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, asset: e.target.value }))}
+                  placeholder="BTC/USDT, EUR/USD..."
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Market *</label>
+                <select
+                  value={signalForm.market}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, market: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="crypto">Crypto</option>
+                  <option value="forex">Forex</option>
+                  <option value="indices">Indices</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Direction *</label>
+                <select
+                  value={signalForm.direction}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, direction: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="BUY">BUY</option>
+                  <option value="SELL">SELL</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Entry *</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={signalForm.entry}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, entry: e.target.value }))}
+                  placeholder="0.00"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Stop Loss *</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={signalForm.stopLoss}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, stopLoss: e.target.value }))}
+                  placeholder="0.00"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Take Profit *</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={signalForm.takeProfit}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, takeProfit: e.target.value }))}
+                  placeholder="0.00"
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Timeframe</label>
+                <select
+                  value={signalForm.timeframe}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, timeframe: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="M5">M5</option>
+                  <option value="M15">M15</option>
+                  <option value="H1">H1</option>
+                  <option value="H4">H4</option>
+                  <option value="D1">D1</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Strategy</label>
+                <select
+                  value={signalForm.strategy}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, strategy: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="smart_money">Smart Money</option>
+                  <option value="order_blocks">Order Blocks</option>
+                  <option value="breakout">Breakout</option>
+                  <option value="trend_following">Trend Following</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400 mb-1 block">Confidence (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={signalForm.confidenceScore}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, confidenceScore: e.target.value }))}
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="text-sm text-dark-400 mb-1 block">AI Explanation / Analysis *</label>
+              <textarea
+                value={signalForm.aiExplanation}
+                onChange={(e) => setSignalForm((p) => ({ ...p, aiExplanation: e.target.value }))}
+                placeholder="Describe your analysis, key levels, and reasoning..."
+                rows={4}
+                className="input-field resize-none"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={signalForm.isPremium}
+                  onChange={(e) => setSignalForm((p) => ({ ...p, isPremium: e.target.checked }))}
+                  className="w-4 h-4 rounded bg-dark-700 border-dark-600 text-primary-500 focus:ring-primary-500"
+                />
+                <span className="text-sm text-dark-300">Premium signal (Pro/VIP only)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={shareToChat}
+                  onChange={(e) => setShareToChat(e.target.checked)}
+                  className="w-4 h-4 rounded bg-dark-700 border-dark-600 text-primary-500 focus:ring-primary-500"
+                />
+                <span className="text-sm text-dark-300">Share in group chat</span>
+              </label>
+            </div>
+
+            <button
+              onClick={handleSendSignal}
+              disabled={sendingSignal}
+              className="btn-primary flex items-center gap-2 px-6"
+            >
+              {sendingSignal ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Send Signal & Notify Users
+            </button>
           </div>
         </div>
       )}

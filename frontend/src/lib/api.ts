@@ -125,6 +125,20 @@ export const adminAPI = {
     api.put('/admin/site-config', data),
 };
 
+// Chat (private group)
+export const chatAPI = {
+  getMessages: (params?: { page?: number; limit?: number }) =>
+    api.get('/chat/messages', { params }),
+  sendMessage: (content: string) =>
+    api.post('/chat/messages', { content }),
+  sendSignalMessage: (signalId: string, content?: string) =>
+    api.post('/chat/messages/signal', { signalId, content }),
+  deleteMessage: (id: string) =>
+    api.delete(`/chat/messages/${id}`),
+  getOnline: () =>
+    api.get('/chat/online'),
+};
+
 // Notifications
 export const notificationsAPI = {
   getRecent: () => api.get('/notifications/recent'),
